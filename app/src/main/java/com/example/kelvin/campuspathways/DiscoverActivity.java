@@ -14,7 +14,6 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -66,7 +65,6 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
     private double zGyro;
     private double zGyroTotal;
     private boolean getCompass = false;
-    private double currentDirection;
     private int sensorChanged;
     private GeomagneticField geomagneticField;
     //List of points in user path
@@ -340,45 +338,11 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
             magnetSet = true;
         }
 
-        //The phone will have 30 tries to find the direction the phone is pointing
-        if (sensorChanged < 30 || getCompass) {
-            if (accelSet && magnetSet && geomagneticField != null && getCompass) {
-                for (int i = 0; i < 5; i++) {
-                    SensorManager.getRotationMatrix(rotation, null, lastAccel, lastMagnet);
-                    SensorManager.getOrientation(rotation, orientation);
-
-                    float azimuthRadians = orientation[0];
-                    currentAngle = ((float) (Math.toDegrees(azimuthRadians) + 360) % 360) - geomagneticField.getDeclination();
-                    currentDirection = currentAngle;
-
-                    Log.d("direction", "init: " + currentDirection); //For debugging purposes
-                }
-                getCompass = false;
-            } else if (accelSet && magnetSet && geomagneticField != null) {
-                SensorManager.getRotationMatrix(rotation, null, lastAccel, lastMagnet);
-                SensorManager.getOrientation(rotation, orientation);
-
-                float azimuthRadians = orientation[0];
-                currentAngle = ((float) (Math.toDegrees(azimuthRadians) + 360) % 360) - geomagneticField.getDeclination();
-                currentDirection = currentAngle;
-            }
-
-        }
-
-        //double readings = event.values[2];
-
-        if (event.sensor == gyroSensor) {
-            if (event.values[2] <= -0.06 || event.values[2] >= 0.06) {  //Filter out these results
-                zGyro = (event.values[2] / 5.89111) * -(180.0 / Math.PI); //The smaller the number, the more sensitive the results are
-                currentDirection += zGyro;
-                zGyroTotal += zGyro;    //Stores how much movement the gyroscopes have detected
-                if ((45 % zGyroTotal) == 45) {  //If the gyroscopes have moved more than 45 degrees
-                    zGyroTotal = 0;             //We check the direction using the magnet meter
-                    getCompass = true;          //Allows us to check the magnet meter
-                    //Log.d("Print", "onSensorChanged: zGyro: " + zGyroTotal + " zGyroMod: " + (60 % zGyroTotal));  //For testing purposes
-                }
-
-            }
+        if (accelSet && magnetSet && geomagneticField != null) {
+            SensorManager.getRotationMatrix(rotation, null, lastAccel, lastMagnet);
+            SensorManager.getOrientation(rotation, orientation);
+            float azimuthRadians = orientation[0];
+            currentAngle = ((float) (Math.toDegrees(azimuthRadians) + 360) % 360) - geomagneticField.getDeclination();
         }
 
         //If event is a step
@@ -390,10 +354,12 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
             LatLng lastLocation = userPath.get(userPath.size() - 1).getLocation();
 
             //Calculate new LatLng
-            LatLng currentPos = SphericalUtil.computeOffset(lastLocation, stepLength, currentDirection);
+            LatLng currentPos = SphericalUtil.computeOffset(lastLocation, stepLength, currentAngle);
 
+            //Show location; Debug only
             tvDiscoverStatus.setText("Lat: " + currentPos.latitude + ", Lng: " + currentPos.longitude);
 
+            //Store step in path
             userPath.add(new TimedLocation(currentPos));
 
         }
