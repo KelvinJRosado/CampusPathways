@@ -1,5 +1,6 @@
 package com.example.kelvin.campuspathways;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -7,7 +8,9 @@ import android.util.Log;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONArray;
@@ -30,6 +33,10 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
     private GoogleMap googleMap;//Map to be used for drawing of paths
 
     private ArrayList<String> paths;//List of paths to be drawn
+    private ArrayList<Integer> pathTimes;
+    private LatLng mapStart;//Sets camera start
+
+    private Marker m1, m2;//Markers on start and end of selected path
 
     //Only constructor
     DatabaseConnectionSelect(String query, GoogleMap gMap) {
@@ -37,6 +44,7 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
         this.googleMap = gMap;
 
         paths = new ArrayList<>();
+        pathTimes = new ArrayList<>();
     }
 
     //Connect to database and perform query
@@ -99,17 +107,65 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
                     points.add(new LatLng(lat, lng));
                 }
 
-                //Draw pathways in different colors
-                if (i % 2 == 0)
-                    googleMap.addPolyline(new PolylineOptions().addAll(points).width(10).color(Color.RED));
-                else
-                    googleMap.addPolyline(new PolylineOptions().addAll(points).width(10).color(Color.BLUE));
+                //Get time taken for path
+                long startTime = pathJSON.getJSONObject(0).getLong("Time");
+                long endTime = pathJSON.getJSONObject(pathJSON.length() - 1).getLong("Time");
+                int timeTaken = (int) (endTime - startTime);
+                pathTimes.add(timeTaken);
 
-                LatLng pos = points.get(points.size() - 1);
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 20.0f));
-                googleMap.addMarker(new MarkerOptions().position(pos).title("Pathway #" + (i + 1)));
+                //Make map start at position of 1st start point
+                if (mapStart == null) mapStart = points.get(0);
+
+                //Draw pathways and make clickable
+                Polyline path = googleMap.addPolyline(new PolylineOptions().addAll(points).width(10).color(Color.RED));
+                path.setClickable(true);
 
             }
+
+            //Move map to 1st point of 1st path
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mapStart, 20.0f));
+
+            //Make line interact with click
+            googleMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
+                @SuppressLint("DefaultLocale")
+                @Override
+                public void onPolylineClick(Polyline polyline) {
+
+                    //Get start and end points of line
+                    LatLng start = polyline.getPoints().get(0);
+                    LatLng end = polyline.getPoints().get(polyline.getPoints().size() - 1);
+                    String ss = polyline.getId().substring(2);//String of line index
+                    int i = Integer.parseInt(ss);//Path index
+                    double timeTaken = (pathTimes.get(i)) / 1000.0;//Time taken for path, seconds
+
+                    //Remove markers of previous path when new one clicked
+                    if (m1 != null && m2 != null) {
+                        m1.remove();
+                        m1 = null;
+                        m2.remove();
+                        m2 = null;
+                    }
+
+                    //Get string detailing time taken
+                    String timeInfo = "";
+                    int minutesTaken = (int) timeTaken / 60;
+                    double extraSeconds = timeTaken - (60 * minutesTaken);
+                    timeInfo = "Time taken: " + minutesTaken + " minutes, " + (int) extraSeconds
+                            + " seconds";
+
+
+                    //Place markers at start and end of selected path
+                    m1 = googleMap.addMarker(new MarkerOptions().position(start)
+                            .title("Pathway #" + (i + 1) + " start")
+                            .snippet(timeInfo));
+                    m2 = googleMap.addMarker(new MarkerOptions().position(end)
+                            .title("Pathway #" + (i + 1) + " end")
+                            .snippet(timeInfo));
+
+
+                }
+            });
+
 
         } catch (Exception e) {
             Log.w("Error", "" + e.getMessage());
