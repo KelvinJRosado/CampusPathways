@@ -45,9 +45,8 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
     */
 
     Context thisContext;
-    long currentTime, nextTime;
     //UI Elements
-    private TextView tvHeight, tvDiscoverStatus;
+    private TextView tvDiscoverStatus;
     private Button btPathControl, btDisplayPaths;
     private Spinner dropdownFeet, dropdownInches;
     //Sensors
@@ -62,10 +61,7 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
     private float[] rotation = new float[9];
     private float[] orientation = new float[3];
     private float currentAngle = 0f;
-    private double zGyro;
-    private double zGyroTotal;
-    private boolean getCompass = false;
-    private int sensorChanged;
+    private int sensorChanged = 0;
     private GeomagneticField geomagneticField;
     //List of points in user path
     private ArrayList<TimedLocation> userPath;
@@ -245,6 +241,8 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
                     //Convert ArrayList into JSON Array
                     JSONArray pathJSON = new JSONArray(pathTemp);
 
+                    /*
+
                     //Build query
                     String st = "'" + pathJSON.toString() + "'";
 
@@ -253,6 +251,8 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
 
                     //Send to database
                     new DatabaseConnectionInsert(query).execute();
+
+                    */
 
                     //Reset buffer
                     userPath.clear();

@@ -49,7 +49,7 @@ public class DisplayActivity extends FragmentActivity implements OnMapReadyCallb
     public void onMapReady(GoogleMap googleMap) {
 
         //Once map loads, plot all paths
-        new DatabaseConnectionSelect("Select * FROM My_Test_Table", googleMap).execute();
+        //new DatabaseConnectionSelect("Select * FROM My_Test_Table", googleMap).execute();
 
     }
 
