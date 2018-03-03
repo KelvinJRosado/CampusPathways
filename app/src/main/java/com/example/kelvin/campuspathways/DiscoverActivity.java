@@ -16,8 +16,10 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,7 +36,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
-import static java.lang.String.format;
 
 public class DiscoverActivity extends AppCompatActivity implements SensorEventListener {
 
@@ -47,9 +48,9 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
     Context thisContext;
     long currentTime, nextTime;
     //UI Elements
-    private SeekBar seekBarHeight;
     private TextView tvHeight, tvDiscoverStatus;
     private Button btPathControl, btDisplayPaths;
+    private Spinner dropdownFeet, dropdownInches;
     //Sensors
     private FusedLocationProviderClient fusedLocationProviderClient;//Gets starting location
     private SensorManager sensorManager;
@@ -91,11 +92,11 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
         userPath = new ArrayList<>();
 
         //UI Elements
-        seekBarHeight = findViewById(R.id.seekbarUserHeight);
-        tvHeight = findViewById(R.id.tvHeight);
         btPathControl = findViewById(R.id.btPathControl);
         btDisplayPaths = findViewById(R.id.btDisplayPathFromDiscover);
         tvDiscoverStatus = findViewById(R.id.tvDiscoverStatus);
+        dropdownFeet = findViewById(R.id.dropdownDiscoverFeet);
+        dropdownInches = findViewById(R.id.dropdownDiscoverInches);
 
         //Sensors
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -108,29 +109,65 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
         //Set up location client
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
-        //Event listener for height slider
-        seekBarHeight.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        //Give choices to dropdowns
+        ArrayList<Integer> feetList = new ArrayList<>(4);
+        ArrayList<Integer> inchesList = new ArrayList<>(12);
+
+        feetList.add(4);
+        feetList.add(5);
+        feetList.add(6);
+        feetList.add(7);
+
+        inchesList.add(0);
+        inchesList.add(1);
+        inchesList.add(2);
+        inchesList.add(3);
+        inchesList.add(4);
+        inchesList.add(5);
+        inchesList.add(6);
+        inchesList.add(7);
+        inchesList.add(8);
+        inchesList.add(9);
+        inchesList.add(10);
+        inchesList.add(11);
+
+        ArrayAdapter<Integer> adapterFeet = new ArrayAdapter<>(thisContext,
+                android.R.layout.simple_list_item_1, feetList);
+        adapterFeet.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dropdownFeet.setAdapter(adapterFeet);
+
+
+        ArrayAdapter<Integer> adapterInches = new ArrayAdapter<>(thisContext,
+                android.R.layout.simple_list_item_1, inchesList);
+        adapterInches.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dropdownInches.setAdapter(adapterInches);
+
+        //Event listeners for dropdowns
+        dropdownFeet.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-
-                int in = 48 + i;
-                userHeightInches = in;//Update global var
-
-                @SuppressLint("DefaultLocale") String ss = "Your Height: " + in + " in / " + in / 12 + " ft " + in % 12 +
-                        " in / " + format("%2.2f", (in * 2.54)) + " cm";
-
-                tvHeight.setText(ss);//Update text view
-
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                //Adjust global var with updated height
+                userHeightInches = (12 * (int) adapterView.getItemIdAtPosition(i));
+                userHeightInches += (int) dropdownInches.getSelectedItem();
             }
 
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                //Do nothing
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+        dropdownInches.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                //Adjust global var with updated height
+                userHeightInches = (int) adapterView.getItemIdAtPosition(i);
+                userHeightInches += 12 * (int) dropdownFeet.getSelectedItem();
             }
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                //Do nothing
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
             }
         });
 
