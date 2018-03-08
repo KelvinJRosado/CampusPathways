@@ -77,8 +77,11 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
                 int path_id = resultSet.getInt("Path_ID");
                 String path = resultSet.getString("User_Path");
 
-                paths.add(resultSet.getString("User_Path"));
-                userHeights.add(step_length);
+                if (path != null) {
+                    paths.add(resultSet.getString("User_Path"));
+                    userHeights.add(step_length);
+                }
+
             }
 
             //Close connection to database
@@ -163,7 +166,6 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
                             + " seconds";
                     distInfo = "Distance: " + distance + " meters";
 
-
                     //Place markers at start and end of selected path
                     m1 = googleMap.addMarker(new MarkerOptions().position(start)
                             .title("Pathway #" + (i + 1) + " start")
@@ -171,7 +173,6 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
                     m2 = googleMap.addMarker(new MarkerOptions().position(end)
                             .title("Pathway #" + (i + 1) + " end")
                             .snippet(timeInfo));
-
 
                 }
             });
