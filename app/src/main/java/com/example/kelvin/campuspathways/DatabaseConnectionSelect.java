@@ -33,7 +33,8 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
     private GoogleMap googleMap;//Map to be used for drawing of paths
 
     private ArrayList<String> paths;//List of paths to be drawn
-    private ArrayList<Integer> pathTimes;
+    private ArrayList<Integer> pathTimes;//List of time taken for each path, in milliseconds
+    private ArrayList<Double> userHeights;//List of distances for each path
     private LatLng mapStart;//Sets camera start
 
     private Marker m1, m2;//Markers on start and end of selected path
@@ -45,6 +46,7 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
 
         paths = new ArrayList<>();
         pathTimes = new ArrayList<>();
+        userHeights = new ArrayList<>();
     }
 
     //Connect to database and perform query
@@ -76,6 +78,7 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
                 String path = resultSet.getString("User_Path");
 
                 paths.add(resultSet.getString("User_Path"));
+                userHeights.add(step_length);
             }
 
             //Close connection to database
@@ -142,6 +145,7 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
                     String ss = polyline.getId().substring(2);//String of line index
                     int i = Integer.parseInt(ss);//Path index
                     double timeTaken = (pathTimes.get(i)) / 1000.0;//Time taken for path, seconds
+                    double distance = userHeights.get(i) * polyline.getPoints().size() * 2;
 
                     //Remove markers of previous path when new one clicked
                     if (m1 != null && m2 != null) {
@@ -152,17 +156,18 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
                     }
 
                     //Get string detailing time taken
-                    String timeInfo;
+                    String timeInfo, distInfo;
                     int minutesTaken = (int) timeTaken / 60;
                     double extraSeconds = timeTaken - (60 * minutesTaken);
                     timeInfo = "Time taken: " + minutesTaken + " minutes, " + (int) extraSeconds
                             + " seconds";
+                    distInfo = "Distance: " + distance + " meters";
 
 
                     //Place markers at start and end of selected path
                     m1 = googleMap.addMarker(new MarkerOptions().position(start)
                             .title("Pathway #" + (i + 1) + " start")
-                            .snippet(timeInfo));
+                            .snippet(timeInfo).snippet(distInfo));
                     m2 = googleMap.addMarker(new MarkerOptions().position(end)
                             .title("Pathway #" + (i + 1) + " end")
                             .snippet(timeInfo));
