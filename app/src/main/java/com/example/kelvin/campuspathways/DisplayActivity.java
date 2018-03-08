@@ -49,7 +49,10 @@ public class DisplayActivity extends FragmentActivity implements OnMapReadyCallb
     public void onMapReady(GoogleMap googleMap) {
 
         //Once map loads, plot all paths
-        //new DatabaseConnectionSelect("Select * FROM My_Test_Table", googleMap).execute();
+        String query = "SELECT Users.Android_ID, Step_Length, Path_ID, User_Path" +
+                " FROM Users FULL OUTER JOIN Pathways ON Users.Android_ID = Pathways.Android_ID;";
+
+        new DatabaseConnectionSelect(query, googleMap).execute();
 
     }
 

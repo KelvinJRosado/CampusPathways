@@ -68,9 +68,14 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
 
             //Iterate through result and put in ArrayList
             while (resultSet.next()) {
-                //Assume that there are 2 columns
-                //Column 1: ID && Column 2: Path JSON
-                paths.add(resultSet.getString(2));
+
+                //4 Columns: Android_ID, Step_Length, Path_ID, User_Path
+                String Android_ID = resultSet.getString("Android_ID");
+                double step_length = resultSet.getDouble("Step_Length");
+                int path_id = resultSet.getInt("Path_ID");
+                String path = resultSet.getString("User_Path");
+
+                paths.add(resultSet.getString("User_Path"));
             }
 
             //Close connection to database
@@ -147,7 +152,7 @@ public class DatabaseConnectionSelect extends AsyncTask<String, Void, String> {
                     }
 
                     //Get string detailing time taken
-                    String timeInfo = "";
+                    String timeInfo;
                     int minutesTaken = (int) timeTaken / 60;
                     double extraSeconds = timeTaken - (60 * minutesTaken);
                     timeInfo = "Time taken: " + minutesTaken + " minutes, " + (int) extraSeconds

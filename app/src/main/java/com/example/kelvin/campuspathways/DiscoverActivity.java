@@ -11,7 +11,9 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -67,13 +69,16 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
     private ArrayList<TimedLocation> userPath;
 
     private int userHeightInches = 48;//User height; Used in step length calculation
-    private boolean tracking = false;
+    private boolean tracking = false;//Checks whether user is being tracked
+    private String androidId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_discover);
         thisContext = this;
+
+        androidId = getAndroidID();
 
         initObjects();
 
@@ -241,18 +246,33 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
                     //Convert ArrayList into JSON Array
                     JSONArray pathJSON = new JSONArray(pathTemp);
 
-                    /*
+                    //Get Android_ID
+
 
                     //Build query
                     String st = "'" + pathJSON.toString() + "'";
 
+                    /*
                     String query = "INSERT INTO My_Test_Table (User_Path)" +
                             " VALUES (" + st + ");";
+                    */
+
+                    //Query 1: Create or update User
+                    double step_length = userHeightInches * 0.0254 * 0.413;//Step length, in meters
+                    String query1 = "IF EXISTS(SELECT * FROM Users where Android_ID = '" + androidId
+                            + "') \n"
+                            + " UPDATE Users SET Step_Length = " + step_length
+                            + " WHERE Android_ID = '" + androidId + "' \n"
+                            + " ELSE INSERT INTO Users(Android_ID, Step_Length) VALUES('"
+                            + androidId + "'," + step_length + ");";
+
+                    //Query 2: Upload path
+                    String query2 = "INSERT INTO Pathways(Android_ID, User_Path)" +
+                            " VALUES ('" + androidId + "', " + st + ");";
 
                     //Send to database
-                    new DatabaseConnectionInsert(query).execute();
-
-                    */
+                    new DatabaseConnectionInsert(query1).execute();
+                    new DatabaseConnectionInsert(query2).execute();
 
                     //Reset buffer
                     userPath.clear();
@@ -349,7 +369,7 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
         if (event.sensor == stepSensor && userPath.size() >= 1) {
 
             //Calculate current step length, in meters
-            double stepLength = userHeightInches * 0.0254;
+            double stepLength = userHeightInches * 0.0254 * 0.413;
 
             LatLng lastLocation = userPath.get(userPath.size() - 1).getLocation();
 
@@ -392,5 +412,13 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
         sensorManager.unregisterListener(this, gyroSensor);
     }
 
+    //Returns Unique ID for each device
+    private String getAndroidID() {
+
+        String ss = Settings.Secure.getString(thisContext.getContentResolver(), Settings.Secure.ANDROID_ID)
+                + Build.SERIAL;
+
+        return ss;
+    }
 
 }
