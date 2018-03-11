@@ -28,6 +28,10 @@ public class StartActivity extends AppCompatActivity {
 
         //Ask for required permissions
         getPermissions();
+
+        //Debug only
+        new DatabaseConnectionCreateNodes().execute();
+
     }
 
     //Initialize UI elements and event listeners
