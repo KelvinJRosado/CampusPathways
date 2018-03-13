@@ -14,6 +14,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Created by Kelvin on 3/11/2018.
@@ -143,6 +145,9 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
 
         }
 
+        //Sort Node points
+        Collections.sort(node, new CompareLatLng());
+
         //Add node to list of nodes
         nodes.add(node);
 
@@ -151,6 +156,31 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
 
         //Recurse
         createNodes();
+
+    }
+
+}
+
+//Sorts LatLng points
+class CompareLatLng implements Comparator<LatLng> {
+
+    @Override
+    public int compare(LatLng latLng1, LatLng latLng2) {
+
+        double temp = latLng1.latitude - latLng2.latitude;
+
+        //LatLng 1 < LatLng 2
+        if (temp < 0)
+            return -1;
+
+        //LatLng1 > LatLng 2
+        if (temp > 0)
+            return 1;
+
+            //LatLng 1 == LatLng2
+        else {
+            return 0;
+        }
 
     }
 

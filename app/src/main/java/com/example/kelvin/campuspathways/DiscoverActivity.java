@@ -246,16 +246,8 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
                     //Convert ArrayList into JSON Array
                     JSONArray pathJSON = new JSONArray(pathTemp);
 
-                    //Get Android_ID
-
-
                     //Build query
                     String st = "'" + pathJSON.toString() + "'";
-
-                    /*
-                    String query = "INSERT INTO My_Test_Table (User_Path)" +
-                            " VALUES (" + st + ");";
-                    */
 
                     //Query 1: Create or update User
                     double step_length = userHeightInches * 0.0254 * 0.413;//Step length, in meters
@@ -270,8 +262,17 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
                     String query2 = "INSERT INTO Pathways(Android_ID, User_Path)" +
                             " VALUES ('" + androidId + "', " + st + ");";
 
-                    //Send to database
+                    //Send height to database
                     new DatabaseConnectionInsert(query1).execute();
+
+                    //Don't save path if too few points
+                    if (pathTemp.size() <= 3) {
+                        String ss = "Height updated";
+                        Toast.makeText(thisContext, ss, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    //Send path to database
                     new DatabaseConnectionInsert(query2).execute();
 
                     //Reset buffer
@@ -415,10 +416,8 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
     //Returns Unique ID for each device
     private String getAndroidID() {
 
-        String ss = Settings.Secure.getString(thisContext.getContentResolver(), Settings.Secure.ANDROID_ID)
+        return Settings.Secure.getString(thisContext.getContentResolver(), Settings.Secure.ANDROID_ID)
                 + Build.SERIAL;
-
-        return ss;
     }
 
 }
