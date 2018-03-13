@@ -38,7 +38,10 @@
 
         <activity
             android:name=".DisplayActivity"
-            android:label="@string/title_activity_display"></activity>
+            android:label="@string/title_activity_display" />
+        <activity
+            android:name=".NodeSelectionActivity"
+            android:label="@string/title_activity_node_selection"></activity>
     </application>
 
 </manifest>

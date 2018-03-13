@@ -3,6 +3,7 @@ package com.example.kelvin.campuspathways;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.SphericalUtil;
 
@@ -19,7 +20,6 @@ import java.util.Comparator;
 
 /**
  * Created by Kelvin on 3/11/2018.
- * <p>
  * Queries database to get path information
  * Extracts start and end point of each path
  * Groups points together to create nodes
@@ -33,13 +33,16 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
     private ArrayList<LatLng> points;
     //List of node groupings
     private ArrayList<ArrayList> nodes;
+    //Map to use
+    private GoogleMap gMap;
 
     //Constructor
-    DatabaseConnectionCreateNodes() {
+    DatabaseConnectionCreateNodes(GoogleMap map) {
 
         //Initialize objects
         points = new ArrayList<>();
         nodes = new ArrayList<>();
+        gMap = map;
 
     }
 

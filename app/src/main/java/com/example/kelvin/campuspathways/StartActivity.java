@@ -15,7 +15,7 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 public class StartActivity extends AppCompatActivity {
 
     //UI Elements
-    Button btDiscover, btDisplay;
+    Button btDiscover, btDisplay, btNodes;
     Context thisContext;//Used when switching activities
 
     @Override
@@ -29,20 +29,27 @@ public class StartActivity extends AppCompatActivity {
         //Ask for required permissions
         getPermissions();
 
-        //Debug only
-        new DatabaseConnectionCreateNodes().execute();
-
     }
 
     //Initialize UI elements and event listeners
     public void init(){
         btDisplay = findViewById(R.id.btShowMap);
         btDiscover = findViewById(R.id.btTrackPath);
+        btNodes = findViewById(R.id.btNodesFromStart);
 
         btDisplay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(thisContext, DisplayActivity.class);
+                startActivity(intent);
+
+            }
+        });
+
+        btNodes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(thisContext, NodeSelectionActivity.class);
                 startActivity(intent);
 
             }

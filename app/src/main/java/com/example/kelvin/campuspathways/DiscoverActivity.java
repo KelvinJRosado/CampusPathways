@@ -49,7 +49,7 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
     Context thisContext;
     //UI Elements
     private TextView tvDiscoverStatus;
-    private Button btPathControl, btDisplayPaths;
+    private Button btPathControl, btDisplayPaths, btNodes;
     private Spinner dropdownFeet, dropdownInches;
     //Sensors
     private FusedLocationProviderClient fusedLocationProviderClient;//Gets starting location
@@ -93,6 +93,7 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
         //UI Elements
         btPathControl = findViewById(R.id.btPathControl);
         btDisplayPaths = findViewById(R.id.btDisplayPathFromDiscover);
+        btNodes = findViewById(R.id.btNodesFromDiscover);
         tvDiscoverStatus = findViewById(R.id.tvDiscoverStatus);
         dropdownFeet = findViewById(R.id.dropdownDiscoverFeet);
         dropdownInches = findViewById(R.id.dropdownDiscoverInches);
@@ -296,6 +297,14 @@ public class DiscoverActivity extends AppCompatActivity implements SensorEventLi
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(thisContext, DisplayActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        btNodes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(thisContext, NodeSelectionActivity.class);
                 startActivity(intent);
             }
         });
