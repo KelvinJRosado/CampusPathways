@@ -56,6 +56,7 @@ public class NodeSelectionActivity extends FragmentActivity implements OnMapRead
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        //Get nodes
         new DatabaseConnectionCreateNodes(mMap).execute();
 
     }
