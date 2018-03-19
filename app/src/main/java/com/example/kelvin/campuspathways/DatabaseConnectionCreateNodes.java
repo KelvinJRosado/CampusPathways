@@ -9,8 +9,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
@@ -51,6 +49,8 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
     private ArrayList<String> paths;
     //List of all paths
     private ArrayList<String> allPaths;
+    //List of all visible paths
+    private ArrayList<Polyline> pathLines;
 
     //Constructor
     DatabaseConnectionCreateNodes(GoogleMap map) {
@@ -61,6 +61,7 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
         nodeCenters = new ArrayList<>();
         paths = new ArrayList<>();
         allPaths = new ArrayList<>();
+        pathLines = new ArrayList<>();
         gMap = map;
 
     }
@@ -349,12 +350,14 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
         //Display a marker at each node
         for (LatLng point : nodeCenters) {
 
+            /*
             //Get marker at node
             Marker marker = gMap.addMarker(new MarkerOptions()
                     .position(point)
                     .title("A node"));
 
             marker.setVisible(false);
+            */
 
             //Draw circle around node; Clickable to filter paths
             Circle circle = gMap.addCircle(new CircleOptions()
@@ -362,6 +365,7 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
                     .radius(maxNodeDistance / 2));
 
             circle.setClickable(true);
+            circle.setFillColor(circle.getStrokeColor());
 
         }
 
@@ -369,6 +373,11 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
 
     //Reset paths to all paths and reset counter
     void resetPaths() {
+
+        //Remove drawn lines
+        for (Polyline line : pathLines) line.remove();
+        pathLines.clear();
+
         paths.clear();
         paths.addAll(allPaths);
         markersClicked = 0;
@@ -410,6 +419,7 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
                 //Draw pathways and make clickable
                 Polyline path = gMap.addPolyline(new PolylineOptions().addAll(points).width(10).color(Color.RED));
                 path.setClickable(true);
+                pathLines.add(path);
 
             }
 
