@@ -1,15 +1,22 @@
 package com.example.kelvin.campuspathways;
 
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Connection;
@@ -29,7 +36,9 @@ import java.util.Collections;
 public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
 
     //Max distance for points to be in same node, in meters
-    private final double maxNodeDistance = 30.0;
+    private final double maxNodeDistance = 100.0;
+    //Number of times markers have been clicked
+    int markersClicked = 0;
     //List of paths
     private ArrayList<LatLng> points;
     //List of node groupings
@@ -38,6 +47,10 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
     private ArrayList<LatLng> nodeCenters;
     //Map to use
     private GoogleMap gMap;
+    //List of paths between 2 selected nodes
+    private ArrayList<String> paths;
+    //List of all paths
+    private ArrayList<String> allPaths;
 
     //Constructor
     DatabaseConnectionCreateNodes(GoogleMap map) {
@@ -46,6 +59,8 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
         points = new ArrayList<>();
         nodes = new ArrayList<>();
         nodeCenters = new ArrayList<>();
+        paths = new ArrayList<>();
+        allPaths = new ArrayList<>();
         gMap = map;
 
     }
@@ -102,7 +117,12 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
                 points.add(startPoint);
                 points.add(endPoint);
 
+                //Insert path into ArrayList
+                paths.add(pathJSONString);
+
             }
+
+            allPaths.addAll(paths);
 
             //Close connection to database
             dbConnection.close();
@@ -124,8 +144,6 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
         //Get points corresponding to each node
         createNodes();
 
-        int x = 0;
-
         //Apply Convex Hull to nodes to get node center point
         for (ArrayList node : nodes) {
 
@@ -141,20 +159,7 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
 
         }
 
-        //If not enough points for nodes, return
-        if (nodeCenters.isEmpty()) return;
-
-        //Move map to 1st point of 1st path
-        LatLng mapStart = nodeCenters.get(0);
-        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mapStart, 20.0f));
-
-        //Display a marker at each node
-        for (LatLng point : nodeCenters) {
-            gMap.addMarker(new MarkerOptions()
-                    .position(point)
-                    .title("A node"));
-        }
-
+        plotNodes();
 
     }
 
@@ -283,6 +288,134 @@ public class DatabaseConnectionCreateNodes extends AsyncTask<Void, Void, Void> {
 
         //return center point
         return new LatLng(avgLat, avgLng);
+
+    }
+
+    //Removes any paths from the list that don't have node as the start or end node
+    private void filterPathsNode(LatLng node) {
+
+        //No use if list is empty
+        if (paths.isEmpty()) return;
+
+        //Buffer to store paths to remove
+        ArrayList<String> pathsToRemove = new ArrayList<>();
+
+        //Iterate through paths and filter
+        for (String path : paths) {
+
+            //Parse JSON to get start and top points
+            JSONArray pathJSON = null;
+            try {
+                pathJSON = new JSONArray(path);
+
+                JSONObject startPointJSON = pathJSON.getJSONObject(0);
+                JSONObject endPointJSON = pathJSON.getJSONObject(pathJSON.length() - 1);
+
+                LatLng startPoint = new LatLng(startPointJSON.getDouble("Latitude"),
+                        startPointJSON.getDouble("Longitude"));
+                LatLng endPoint = new LatLng(endPointJSON.getDouble("Latitude"),
+                        endPointJSON.getDouble("Longitude"));
+
+                //Check if start or end point is near node
+                if (SphericalUtil.computeDistanceBetween(startPoint, node) > maxNodeDistance / 2
+                        && SphericalUtil.computeDistanceBetween(endPoint, node) > maxNodeDistance / 2) {
+
+                    //If start and end point too far from node, store in buffer
+                    pathsToRemove.add(path);
+
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        //Remove paths in buffer from global list
+        paths.removeAll(pathsToRemove);
+
+    }
+
+    //Puts node markers on map
+    private void plotNodes() {
+
+        //If not enough points for nodes, return
+        if (nodeCenters.isEmpty()) return;
+
+        //Move map to 1st point of 1st path
+        LatLng mapStart = nodeCenters.get(0);
+        gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mapStart, 16.0f));//Zoom domain: [2.0,21.0]
+
+        //Display a marker at each node
+        for (LatLng point : nodeCenters) {
+
+            //Get marker at node
+            Marker marker = gMap.addMarker(new MarkerOptions()
+                    .position(point)
+                    .title("A node"));
+
+            marker.setVisible(false);
+
+            //Draw circle around node; Clickable to filter paths
+            Circle circle = gMap.addCircle(new CircleOptions()
+                    .center(point)
+                    .radius(maxNodeDistance / 2));
+
+            circle.setClickable(true);
+
+        }
+
+    }
+
+    //Reset paths to all paths and reset counter
+    void resetPaths() {
+        paths.clear();
+        paths.addAll(allPaths);
+        markersClicked = 0;
+    }
+
+    //Plot paths
+    void plotPaths(LatLng markerPosition) {
+
+        gMap.clear();
+
+        filterPathsNode(markerPosition);
+        plotNodes();
+
+        //Iterate through List of JSON arrays
+        //Each JSON array is 1 pathway
+        try {
+            for (int i = 0; i < paths.size(); i++) {
+
+                //Decode JSON array into polyline
+                JSONArray pathJSON = new JSONArray(paths.get(i));
+
+                ArrayList<LatLng> points = new ArrayList<>();
+                //Get JSON array into list of points
+                for (int j = 0; j < pathJSON.length(); j++) {
+                    //Get data from JSON object
+                    JSONObject point = pathJSON.getJSONObject(j);
+                    double lat = point.getDouble("Latitude");
+                    double lng = point.getDouble("Longitude");
+
+                    //Make point from JSON data and add to list
+                    points.add(new LatLng(lat, lng));
+                }
+
+                //Get time taken for path
+                long startTime = pathJSON.getJSONObject(0).getLong("Time");
+                long endTime = pathJSON.getJSONObject(pathJSON.length() - 1).getLong("Time");
+                int timeTaken = (int) (endTime - startTime);
+
+                //Draw pathways and make clickable
+                Polyline path = gMap.addPolyline(new PolylineOptions().addAll(points).width(10).color(Color.RED));
+                path.setClickable(true);
+
+            }
+
+        } catch (Exception e) {
+            e.getStackTrace();
+        }
 
     }
 
